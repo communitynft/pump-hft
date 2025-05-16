@@ -27,8 +27,10 @@ export function MarketDataProvider({ children }: { children: React.ReactNode }) 
   const [ws, setWs] = useState<WebSocket | null>(null);
   const [bids, setBids] = useState<OrderBookEntry[]>([]);
   const [asks, setAsks] = useState<OrderBookEntry[]>([]);
+  const [spread, setSpread] = useState(0);
 
-  const processOrderBook = (data: any) => {
+  const processOrderBook = (data: unknown) => {
+    if (!data) return;
     // Implementation placeholder for order book processing
   };
 
@@ -49,14 +51,17 @@ export function MarketDataProvider({ children }: { children: React.ReactNode }) 
     setWs(null);
     setBids([]);
     setAsks([]);
+    setSpread(0);
   };
 
   useEffect(() => {
-    return () => disconnect();
-  }, []);
+    return () => {
+      disconnect();
+    };
+  }, [disconnect]);
 
   return (
-    <MarketDataContext.Provider value={{ bids, asks, spread: 0, connectToMarket, disconnect }}>
+    <MarketDataContext.Provider value={{ bids, asks, spread, connectToMarket, disconnect }}>
       {children}
     </MarketDataContext.Provider>
   );

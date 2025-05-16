@@ -2,14 +2,16 @@
 
 import React from 'react';
 import { ReactNode } from 'react';
-import { WalletProvider } from '../../context/WalletContext';
-import { MarketDataProvider } from '../../context/MarketDataContext';
 import { ErrorBoundary } from 'react-error-boundary';
+
+import { MarketDataProvider } from '../../context/MarketDataContext';
+import { WalletProvider } from '../../context/WalletContext';
+
 import LoadingSpinner from '../../components/LoadingSpinner';
 import ErrorFallback from '../../components/ErrorFallback';
 
 // Global CSS imports
-import '../styles/globals.css';
+import '../../styles/globals.css';
 
 export default function RootLayout({
   children,

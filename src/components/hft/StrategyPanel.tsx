@@ -17,14 +17,21 @@ export default function StrategyPanel() {
     <div className="p-4 bg-white rounded-lg shadow">
       <h3 className="text-xl font-bold mb-4">Market Making Strategy</h3>
       <div className="space-y-4">
-        <div>
-          <label>Spread Target (%)</label>
+        <div className="mb-4">
+          <label htmlFor="spreadTarget" className="block text-sm font-medium text-gray-700 mb-1">
+            Spread Target (%)
+          </label>
           <input
+            id="spreadTarget"
             type="number"
             value={config.spreadTarget}
             onChange={(e) => setConfig({...config, spreadTarget: parseFloat(e.target.value)})}
-            className="ml-2 p-1 border rounded"
+            className="w-full p-2 border rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+            aria-describedby="spreadTargetHelp"
           />
+          <p id="spreadTargetHelp" className="mt-1 text-sm text-gray-500">
+            Target spread between buy and sell orders
+          </p>
         </div>
         <button
           onClick={startStrategy}
