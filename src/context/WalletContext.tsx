@@ -1,5 +1,5 @@
-import { Connection, PublicKey } from '@solana/web3.js';
 import { createContext, useContext, useState, useEffect, ReactNode } from 'react';
+import { Connection, PublicKey } from '@solana/web3.js';
 
 type WalletContextProps = {
   connect: () => Promise<void>;

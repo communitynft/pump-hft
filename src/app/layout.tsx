@@ -1,26 +1,59 @@
 'use client';
 
-import React from 'react';
-import { ReactNode } from 'react';
-import { ErrorBoundary } from 'react-error-boundary';
+import React, { ReactNode, useEffect, useState } from 'react';
+import { Inter } from 'next/font/google';
 
-import { MarketDataProvider } from '../../context/MarketDataContext';
-import { WalletProvider } from '../../context/WalletContext';
+import { MarketDataProvider } from '../context/MarketDataContext';
+import { WalletProvider } from '../context/WalletContext';
+import LoadingSpinner from '../components/LoadingSpinner';
 
-import LoadingSpinner from '../../components/LoadingSpinner';
-import ErrorFallback from '../../components/ErrorFallback';
+import '../styles/globals.css';
+import './globals.css';
 
-// Global CSS imports
-import '../../styles/globals.css';
+// Initialize font
+const inter = Inter({ subsets: ['latin'] });
+
+// Simple error boundary component
+class ErrorBoundary extends React.Component<{children: ReactNode}, {hasError: boolean}> {
+  constructor(props: {children: ReactNode}) {
+    super(props);
+    this.state = { hasError: false };
+  }
+
+  static getDerivedStateFromError() {
+    return { hasError: true };
+  }
+
+  render() {
+    if (this.state.hasError) {
+      return (
+        <div className="flex items-center justify-center min-h-screen bg-gray-100">
+          <div className="p-8 bg-white rounded-lg shadow-md">
+            <h2 className="text-xl font-bold text-red-600">Something went wrong</h2>
+            <p className="mt-2 text-gray-700">Please refresh the page to continue.</p>
+            <button 
+              onClick={() => window.location.reload()}
+              className="px-4 py-2 mt-4 text-white bg-blue-600 rounded hover:bg-blue-700"
+            >
+              Refresh Page
+            </button>
+          </div>
+        </div>
+      );
+    }
+
+    return this.props.children;
+  }
+}
 
 export default function RootLayout({
   children,
 }: {
   children: ReactNode;
 }) {
-  const [isLoading, setIsLoading] = React.useState(true);
+  const [isLoading, setIsLoading] = useState(true);
 
-  React.useEffect(() => {
+  useEffect(() => {
     // Simulate loading
     const timer = setTimeout(() => {
       setIsLoading(false);
@@ -38,8 +71,8 @@ export default function RootLayout({
         <meta name="description" content="HFT Interface for pump.fun using Phantom wallet" />
         <link rel="icon" href="/favicon.ico" />
       </head>
-      <body className="min-h-screen bg-gray-50">
-        <ErrorBoundary FallbackComponent={ErrorFallback}>
+      <body className={`min-h-screen bg-gray-50 ${inter.className}`}>
+        <ErrorBoundary>
           <WalletProvider>
             <MarketDataProvider>
               {isLoading ? <LoadingSpinner /> : children}

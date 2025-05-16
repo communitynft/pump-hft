@@ -1,5 +1,4 @@
-import React from 'react';
-import { createContext, useContext, useState, useEffect } from 'react';
+import { createContext, useContext, useState, useEffect, useCallback } from 'react';
 
 export type OrderBookEntry = {
   price: number;
@@ -23,37 +22,88 @@ const MarketDataContext = createContext<MarketDataContextType>({
   disconnect: () => {}
 });
 
+type OrderBookData = {
+  bids?: Array<[string, string]>;
+  asks?: Array<[string, string]>;
+};
+
 export function MarketDataProvider({ children }: { children: React.ReactNode }) {
   const [ws, setWs] = useState<WebSocket | null>(null);
   const [bids, setBids] = useState<OrderBookEntry[]>([]);
   const [asks, setAsks] = useState<OrderBookEntry[]>([]);
   const [spread, setSpread] = useState(0);
 
-  const processOrderBook = (data: unknown) => {
+  const processOrderBook = useCallback((data: OrderBookData) => {
     if (!data) return;
-    // Implementation placeholder for order book processing
-  };
 
-  const connectToMarket = (pair: string) => {
-    const websocket = new WebSocket(
-      `wss://api.pump.fun/ws?pair=${encodeURIComponent(pair)}`
-    );
-
-    websocket.onmessage = (event) => {
-      processOrderBook(JSON.parse(event.data));
+    const processEntries = (entries: Array<[string, string]> = []): OrderBookEntry[] => {
+      let total = 0;
+      return entries
+        .map(([price, size]) => ({
+          price: parseFloat(price),
+          size: parseFloat(size),
+          total: 0
+        }))
+        .sort((a, b) => b.price - a.price)
+        .map(entry => {
+          total += entry.size;
+          return { ...entry, total };
+        });
     };
 
-    setWs(websocket);
-  };
+    const newBids = processEntries(data.bids);
+    const newAsks = processEntries(data.asks);
 
-  const disconnect = () => {
-    ws?.close();
-    setWs(null);
-    setBids([]);
-    setAsks([]);
-    setSpread(0);
-  };
+    setBids(newBids);
+    setAsks(newAsks);
 
+    // Calculate spread if we have both bids and asks
+    if (newBids.length > 0 && newAsks.length > 0) {
+      const bestBid = newBids[0]?.price || 0;
+      const bestAsk = newAsks[0]?.price || 0;
+      setSpread(bestAsk - bestBid);
+    }
+  }, []);
+
+  const disconnect = useCallback(() => {
+    if (ws) {
+      ws.close();
+      setWs(null);
+      setBids([]);
+      setAsks([]);
+      setSpread(0);
+    }
+  }, [ws]);
+
+  const connectToMarket = useCallback((pair: string) => {
+    try {
+      disconnect(); // Close any existing connection
+      
+      const websocket = new WebSocket(
+        `wss://api.pump.fun/ws?pair=${encodeURIComponent(pair)}`
+      );
+
+      websocket.onmessage = (event) => {
+        try {
+          const data = JSON.parse(event.data as string);
+          processOrderBook(data);
+        } catch (error) {
+          console.error('Error parsing WebSocket message:', error);
+        }
+      };
+
+      websocket.onerror = (error) => {
+        console.error('WebSocket error:', error);
+        disconnect();
+      };
+
+      setWs(websocket);
+    } catch (error) {
+      console.error('Error connecting to market:', error);
+    }
+  }, [disconnect, processOrderBook]);
+
+  // Clean up on unmount
   useEffect(() => {
     return () => {
       disconnect();
@@ -61,10 +111,24 @@ export function MarketDataProvider({ children }: { children: React.ReactNode }) 
   }, [disconnect]);
 
   return (
-    <MarketDataContext.Provider value={{ bids, asks, spread, connectToMarket, disconnect }}>
+    <MarketDataContext.Provider 
+      value={{ 
+        bids, 
+        asks, 
+        spread, 
+        connectToMarket, 
+        disconnect 
+      }}
+    >
       {children}
     </MarketDataContext.Provider>
   );
 }
 
-export const useMarketData = () => useContext(MarketDataContext);
+export const useMarketData = () => {
+  const context = useContext(MarketDataContext);
+  if (!context) {
+    throw new Error('useMarketData must be used within a MarketDataProvider');
+  }
+  return context;
+};
