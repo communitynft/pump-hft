@@ -1,0 +1,123 @@
+name: CI/CD
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+
+# Environment variables available to all jobs and steps in this workflow
+env:
+  NODE_VERSION: '20.x'  # Using LTS version
+  CI: true
+  # These will be set in the jobs that need them
+  VERCEL_ORG_ID: ''
+  VERCEL_PROJECT_ID: ''
+  CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
+
+# Allow the deploy job to access the VERCEL_TOKEN
+permissions:
+  contents: read
+  deployments: write
+
+jobs:
+  test:
+    name: Test and Lint
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+      
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'npm'
+      
+      - name: Install dependencies
+        run: npm ci --prefer-offline --no-audit --no-fund
+        
+      - name: Run type check
+        run: npx tsc --noEmit
+        
+      - name: Run linter
+        run: npx eslint . --ext .ts,.tsx,.js,.jsx --max-warnings=0
+        
+      - name: Run tests
+        run: npm test -- --coverage --passWithNoTests
+        
+      - name: Verify Codecov Token
+        if: github.ref == 'refs/heads/main'
+        run: |
+          if [ -z "${{ secrets.CODECOV_TOKEN }}" ]; then
+            echo "CODECOV_TOKEN is not set"
+            exit 1
+          fi
+          
+      - name: Upload coverage
+        if: github.ref == 'refs/heads/main'
+        uses: codecov/codecov-action@v4
+        with:
+          token: ${{ secrets.CODECOV_TOKEN }}
+          file: ./coverage/lcov.info
+          fail_ci_if_error: true
+  
+  deploy:
+    name: Deploy to Vercel
+    needs: test
+    if: github.ref == 'refs/heads/main' && github.event_name != 'pull_request'
+    runs-on: ubuntu-latest
+    environment: production
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+      
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          
+      - name: Install dependencies
+        run: npm ci --prefer-offline --no-audit --no-fund
+        
+      - name: Build
+        run: npm run build
+        
+      - name: Verify Vercel Credentials
+        if: github.ref == 'refs/heads/main'
+        run: |
+          if [ -z "${{ secrets.VERCEL_TOKEN }}" ]; then
+            echo "VERCEL_TOKEN is not set"
+            exit 1
+          fi
+          if [ -z "${{ secrets.VERCEL_ORG_ID }}" ]; then
+            echo "VERCEL_ORG_ID is not set"
+            exit 1
+          fi
+          if [ -z "${{ secrets.VERCEL_PROJECT_ID }}" ]; then
+            echo "VERCEL_PROJECT_ID is not set"
+            exit 1
+          fi
+          
+      - name: Deploy to Vercel
+        if: github.ref == 'refs/heads/main'
+        uses: amondnet/vercel-action@v25
+        with:
+          vercel-token: ${{ secrets.VERCEL_TOKEN }}
+          vercel-org-id: ${{ secrets.VERCEL_ORG_ID }}
+          vercel-project-id: ${{ secrets.VERCEL_PROJECT_ID }}
+          vercel-args: '--prod --confirm'
+          working-directory: ./
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+        env:
+          VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
+          VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID }}
+          VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
+    
+      - name: Verify Deployment
+        run: |
+          echo "Deployment to Vercel completed successfully!"
+          echo "URL: https://${{ env.VERCEL_PROJECT_ID }}.vercel.app"

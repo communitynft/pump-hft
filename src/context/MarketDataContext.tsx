@@ -33,8 +33,8 @@ export function MarketDataProvider({ children }: { children: React.ReactNode }) 
   const [asks, setAsks] = useState<OrderBookEntry[]>([]);
   const [spread, setSpread] = useState(0);
 
-  const processOrderBook = useCallback((data: OrderBookData) => {
-    if (!data) return;
+  const processOrderBook = useCallback((orderBookData: OrderBookData) => {
+    if (!orderBookData) return;
 
     const processEntries = (entries: Array<[string, string]> = []): OrderBookEntry[] => {
       let total = 0;
@@ -51,8 +51,8 @@ export function MarketDataProvider({ children }: { children: React.ReactNode }) 
         });
     };
 
-    const newBids = processEntries(data.bids);
-    const newAsks = processEntries(data.asks);
+    const newBids = processEntries(orderBookData.bids);
+    const newAsks = processEntries(orderBookData.asks);
 
     setBids(newBids);
     setAsks(newAsks);

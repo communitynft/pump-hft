@@ -23,8 +23,8 @@
         "name": "next"
       }
     ],
-    "types": ["jest", "node"],
-    "typeRoots": ["node_modules/@types", "src/types"],
+    "typeRoots": ["./node_modules/@types", "./src/types"],
+    "types": ["node", "jest"],
     "allowSyntheticDefaultImports": true,
     "noImplicitAny": true,
     "strictNullChecks": true,

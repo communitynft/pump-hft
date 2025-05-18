@@ -23,7 +23,7 @@ export default function ErrorFallback({ error, resetErrorBoundary }) {
             Something went wrong
           </h3>
           <div className="mt-2 text-sm text-gray-500">
-            <p>We're sorry, but an unexpected error occurred.</p>
+            <p>We&apos;re sorry, but an unexpected error occurred.</p>
             <details className="mt-4 p-4 bg-gray-50 rounded-md">
               <summary className="text-sm font-medium text-gray-700 cursor-pointer">
                 Error details

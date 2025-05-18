@@ -1,4 +1,5 @@
 import { useState } from 'react';
+
 import { MarketMaker } from '../../lib/hftStrategy';
 
 export default function StrategyPanel() {
@@ -18,9 +19,11 @@ export default function StrategyPanel() {
       <h3 className="text-xl font-bold mb-4">Market Making Strategy</h3>
       <div className="space-y-4">
         <div className="mb-4">
-          <label htmlFor="spreadTarget" className="block text-sm font-medium text-gray-700 mb-1">
-            Spread Target (%)
-          </label>
+          <div className="mb-1">
+            <label htmlFor="spreadTarget" className="block text-sm font-medium text-gray-700">
+              Spread Target (%)
+            </label>
+          </div>
           <input
             id="spreadTarget"
             type="number"

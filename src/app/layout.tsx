@@ -1,81 +1,65 @@
 'use client';
 
-import React, { ReactNode, useEffect, useState } from 'react';
+// External imports
 import { Inter } from 'next/font/google';
-
+import { Analytics } from '@vercel/analytics/react';
+import React, { useEffect, useState } from 'react';
+// Component imports
+import { ErrorBoundary } from '@/components/ErrorBoundary';
+import LoadingSpinner from '../components/LoadingSpinner';
+// Context imports
 import { MarketDataProvider } from '../context/MarketDataContext';
 import { WalletProvider } from '../context/WalletContext';
-import LoadingSpinner from '../components/LoadingSpinner';
-
+// Style imports
 import '../styles/globals.css';
 import './globals.css';
 
 // Initialize font
 const inter = Inter({ subsets: ['latin'] });
 
-// Simple error boundary component
-class ErrorBoundary extends React.Component<{children: ReactNode}, {hasError: boolean}> {
-  constructor(props: {children: ReactNode}) {
-    super(props);
-    this.state = { hasError: false };
-  }
-
-  static getDerivedStateFromError() {
-    return { hasError: true };
-  }
-
-  render() {
-    if (this.state.hasError) {
-      return (
-        <div className="flex items-center justify-center min-h-screen bg-gray-100">
-          <div className="p-8 bg-white rounded-lg shadow-md">
-            <h2 className="text-xl font-bold text-red-600">Something went wrong</h2>
-            <p className="mt-2 text-gray-700">Please refresh the page to continue.</p>
-            <button 
-              onClick={() => window.location.reload()}
-              className="px-4 py-2 mt-4 text-white bg-blue-600 rounded hover:bg-blue-700"
-            >
-              Refresh Page
-            </button>
-          </div>
-        </div>
-      );
-    }
-
-    return this.props.children;
-  }
-}
-
 export default function RootLayout({
   children,
 }: {
-  children: ReactNode;
+  children: React.ReactNode;
 }) {
-  const [isLoading, setIsLoading] = useState(true);
+  const [mounted, setMounted] = useState(false);
 
   useEffect(() => {
-    // Simulate loading
-    const timer = setTimeout(() => {
-      setIsLoading(false);
-    }, 1000);
-
-    return () => clearTimeout(timer);
+    setMounted(true);
   }, []);
 
+  if (!mounted) {
+    return (
+      <html lang="en">
+        <body className={`${inter.className} bg-gray-50`}>
+          <div className="flex items-center justify-center min-h-screen">
+            <LoadingSpinner size="lg" />
+          </div>
+        </body>
+      </html>
+    );
+  }
+
   return (
-    <html lang="en" className="h-full">
+    <html lang="en" className="h-full bg-gray-50">
       <head>
-        <meta charSet="utf-8" />
-        <meta name="viewport" content="width=device-width, initial-scale=1" />
-        <meta name="theme-color" content="#000000" />
-        <meta name="description" content="HFT Interface for pump.fun using Phantom wallet" />
-        <link rel="icon" href="/favicon.ico" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=0" />
+        <meta name="theme-color" content="#ffffff" />
       </head>
-      <body className={`min-h-screen bg-gray-50 ${inter.className}`}>
+      <body className={`${inter.className} min-h-full flex flex-col`}>
         <ErrorBoundary>
           <WalletProvider>
             <MarketDataProvider>
-              {isLoading ? <LoadingSpinner /> : children}
+              <div className="flex-1">
+                {children}
+                <Analytics />
+              </div>
+              <footer className="py-4 text-center text-sm text-gray-500 bg-white border-t">
+                <div className="container mx-auto px-4">
+                  <p>Pump.fun HFT Interface - {new Date().getFullYear()}</p>
+                  <p className="text-xs mt-1 text-gray-400">High-frequency trading on Solana</p>
+                </div>
+              </footer>
             </MarketDataProvider>
           </WalletProvider>
         </ErrorBoundary>

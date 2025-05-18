@@ -1,7 +1,9 @@
 'use client';
 
+// External imports
 import React, { useState } from 'react';
 
+// Component imports
 import ConnectionPanel from '../components/hft/ConnectionPanel';
 import OrderBook from '../components/hft/OrderBook';
 import StrategyPanel from '../components/hft/StrategyPanel';
